@@ -3,6 +3,9 @@ package com.sparta.springblog.controller;
 import com.sparta.springblog.dto.ApiResponseDto;
 import com.sparta.springblog.dto.CommentRequestDto;
 import com.sparta.springblog.dto.CommentResponseDto;
+import com.sparta.springblog.entity.ApiUseTime;
+import com.sparta.springblog.entity.User;
+import com.sparta.springblog.repository.ApiUseTimeRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,12 +27,35 @@ import lombok.RequiredArgsConstructor;
 public class CommentController {
 
     private final CommentServiceImpl commentServiceImpl;
+    private final ApiUseTimeRepository apiUseTimeRepository;
+
 
     @PostMapping("/comments")
     public ResponseEntity<CommentResponseDto> createComment(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody CommentRequestDto requestDto) {
-        CommentResponseDto result = commentServiceImpl.createComment(requestDto, userDetails.getUser());
+        long startTime = System.currentTimeMillis();
+
+        try {  CommentResponseDto result = commentServiceImpl.createComment(requestDto, userDetails.getUser());
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
-    }
+    }  finally {
+        long endTime = System.currentTimeMillis();
+        long runTime = endTime - startTime;
+
+        User loginUser = userDetails.getUser();
+
+        // API 사용시간 및 DB 에 기록
+        ApiUseTime apiUseTime = apiUseTimeRepository.findByUser(loginUser)
+                .orElse(null);
+        if (apiUseTime == null) {
+            apiUseTime = new ApiUseTime(loginUser, runTime);
+        } else {
+            apiUseTime.addUseTime(runTime);
+        }
+
+        System.out.println("[API Use Time] Username: " + loginUser.getUsername() + ", Total Time: " + apiUseTime.getTotalTime() + " ms");
+        apiUseTimeRepository.save(apiUseTime);
+    }}
+
+
 
     @PutMapping("/comments/{id}")
     public ResponseEntity<ApiResponseDto> updateComment(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long id, @RequestBody CommentRequestDto requestDto) {

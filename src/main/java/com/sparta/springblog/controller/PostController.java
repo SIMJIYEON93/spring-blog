@@ -4,6 +4,9 @@ import com.sparta.springblog.dto.ApiResponseDto;
 import com.sparta.springblog.dto.PostListResponseDto;
 import com.sparta.springblog.dto.PostRequestDto;
 import com.sparta.springblog.dto.PostResponseDto;
+import com.sparta.springblog.entity.ApiUseTime;
+import com.sparta.springblog.entity.User;
+import com.sparta.springblog.repository.ApiUseTimeRepository;
 import com.sun.jdi.request.DuplicateRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +30,36 @@ import lombok.RequiredArgsConstructor;
 public class PostController {
 
     private final PostServiceImpl postServiceImpl;
+    private final ApiUseTimeRepository apiUseTimeRepository;
 
     @PostMapping("/posts")
     public ResponseEntity<PostResponseDto> createPost(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody PostRequestDto requestDto) {
-        PostResponseDto result = postServiceImpl.createPost(requestDto, userDetails.getUser());
-        return ResponseEntity.status(201).body(result);
+        long startTime = System.currentTimeMillis();
+
+        try {
+            PostResponseDto result = postServiceImpl.createPost(requestDto, userDetails.getUser());
+            return ResponseEntity.status(201).body(result);
+        } finally {
+            long endTime = System.currentTimeMillis();
+            long runTime = endTime - startTime;
+
+            User loginUser = userDetails.getUser();
+
+            // API 사용시간 및 DB 에 기록
+            ApiUseTime apiUseTime = apiUseTimeRepository.findByUser(loginUser)
+                    .orElse(null);
+            if (apiUseTime == null) {
+                apiUseTime = new ApiUseTime(loginUser, runTime);
+            } else {
+                apiUseTime.addUseTime(runTime);
+            }
+
+            System.out.println("[API Use Time] Username: " + loginUser.getUsername() + ", Total Time: " + apiUseTime.getTotalTime() + " ms");
+            apiUseTimeRepository.save(apiUseTime);
+        }
     }
+
+
 
     @GetMapping("/posts")
     public ResponseEntity<PostListResponseDto> getPosts() {

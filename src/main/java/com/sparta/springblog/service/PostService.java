@@ -14,4 +14,18 @@ public interface PostService {
     void deletePost(Long id, User user);
     PostResponseDto updatePost(Long id, PostRequestDto requestDto, User user);
     Post findPost(long id);
+
+    /**
+     * 게시글 좋아요
+     * @param id 좋아요 요청 게시글 ID
+     * @param user 게시글 좋아요 요청자
+     */
+    void likePost(Long id, User user);
+
+    /**
+     * 게시글 좋아요 취소
+     * @param id 좋아요 취소 요청 게시글 ID
+     * @param user 게시글 좋아요 취소 요청자
+     */
+    void deleteLikePost(Long id, User user);
 }

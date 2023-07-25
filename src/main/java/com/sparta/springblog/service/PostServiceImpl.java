@@ -1,6 +1,7 @@
 package com.sparta.springblog.service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 
@@ -8,9 +9,12 @@ import com.sparta.springblog.dto.PostListResponseDto;
 import com.sparta.springblog.dto.PostRequestDto;
 import com.sparta.springblog.dto.PostResponseDto;
 import com.sparta.springblog.entity.Post;
+import com.sparta.springblog.entity.PostLike;
 import com.sparta.springblog.entity.User;
 import com.sparta.springblog.entity.UserRoleEnum;
+import com.sparta.springblog.repository.PostLikeRepository;
 import com.sparta.springblog.repository.PostRepository;
+import com.sun.jdi.request.DuplicateRequestException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,12 +24,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
 
     @Override
     public PostResponseDto createPost(PostRequestDto requestDto, User user) {
         Post post = new Post(requestDto);
         post.setUser(user);
-
+        //2.oject.isnull(->null check)
+        //3.post에게 method 만들어서 역할을 위임
         postRepository.save(post);
 
         return new PostResponseDto(post);
@@ -80,5 +86,32 @@ public class PostServiceImpl implements PostService {
         return postRepository.findById(id).orElseThrow(() ->
                 new IllegalArgumentException("선택한 게시글은 존재하지 않습니다.")
         );
+    }
+
+    @Override
+    @Transactional
+    public void likePost(Long id, User user) {
+        Post post = findPost(id);
+
+        // 아래 조건 코드와 동일
+        // if (postLikeRepository.findByUserAndPost(user, post).isPresent()) {
+        if (postLikeRepository.existsByUserAndPost(user, post)) {
+            throw new DuplicateRequestException("이미 좋아요 한 게시글 입니다.");
+        } else {
+            PostLike postLike = new PostLike(user, post);
+            postLikeRepository.save(postLike);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteLikePost(Long id, User user) {
+        Post post = findPost(id);
+        Optional<PostLike> postLikeOptional = postLikeRepository.findByUserAndPost(user, post);
+        if (postLikeOptional.isPresent()) {
+            postLikeRepository.delete(postLikeOptional.get());
+        } else {
+            throw new IllegalArgumentException("해당 게시글에 취소할 좋아요가 없습니다.");
+        }
     }
 }

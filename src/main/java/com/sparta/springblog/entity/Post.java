@@ -1,5 +1,6 @@
 package com.sparta.springblog.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.sparta.springblog.dto.PostRequestDto;
@@ -39,6 +40,9 @@ public class Post extends TimeStamped {
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
     private List<Comment> comments;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
+    private List<PostLike> postLikes = new ArrayList<>();
+
     public Post(PostRequestDto requestDto) {
         this.title = requestDto.getTitle();
         this.content = requestDto.getContent();
@@ -55,4 +59,5 @@ public class Post extends TimeStamped {
     public void setUser(User user) {
         this.user = user;
     }
+
 }

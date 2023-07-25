@@ -1,6 +1,7 @@
 package com.sparta.springblog.service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
@@ -12,9 +13,12 @@ import com.sparta.springblog.entity.Post;
 import com.sparta.springblog.entity.PostLike;
 import com.sparta.springblog.entity.User;
 import com.sparta.springblog.entity.UserRoleEnum;
+import com.sparta.springblog.exception.NotHaveRoleException;
+import com.sparta.springblog.exception.PostNotFoundException;
 import com.sparta.springblog.repository.PostLikeRepository;
 import com.sparta.springblog.repository.PostRepository;
 import com.sun.jdi.request.DuplicateRequestException;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostLikeRepository postLikeRepository;
+    private final MessageSource messageSource;
 
     @Override
     public PostResponseDto createPost(PostRequestDto requestDto, User user) {
@@ -59,7 +64,14 @@ public class PostServiceImpl implements PostService {
 
         // 게시글 작성자(post.user) 와 요청자(user) 가 같은지 또는 Admin 인지 체크 (아니면 예외발생)
         if (!(user.getRole().equals(UserRoleEnum.ADMIN) || post.getUser().equals(user))) {
-            throw new RejectedExecutionException("작성자만 삭제 할 수 있습니다.");
+            throw new NotHaveRoleException(
+                             messageSource.getMessage(
+                            "not.have.role",
+                            null,
+                            "Not Have Role",
+                            Locale.getDefault()
+                    )
+            );
         }
 
         postRepository.delete(post);
@@ -72,7 +84,13 @@ public class PostServiceImpl implements PostService {
 
         // 게시글 작성자(post.user) 와 요청자(user) 가 같은지 또는 Admin 인지 체크 (아니면 예외발생)
         if (!(user.getRole().equals(UserRoleEnum.ADMIN) || post.getUser().equals(user))) {
-            throw new RejectedExecutionException("작성자만 수정 할 수 있습니다.");
+            throw new NotHaveRoleException(
+                    messageSource.getMessage(
+                    "not.have.role",
+                    null,
+                    "Not Have Role",
+                    Locale.getDefault())
+            );
         }
 
         post.setTitle(requestDto.getTitle());
@@ -84,7 +102,14 @@ public class PostServiceImpl implements PostService {
     @Override
     public Post findPost(long id) {
         return postRepository.findById(id).orElseThrow(() ->
-                new IllegalArgumentException("선택한 게시글은 존재하지 않습니다.")
+                new PostNotFoundException(
+                        messageSource.getMessage(
+                                "not.found.post",
+                                null,
+                                "Wrong Post",
+                                Locale.getDefault()
+                        )
+                )
         );
     }
 

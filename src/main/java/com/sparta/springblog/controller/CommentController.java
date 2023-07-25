@@ -1,7 +1,5 @@
 package com.sparta.springblog.controller;
 
-import java.util.concurrent.RejectedExecutionException;
-
 import com.sparta.springblog.dto.ApiResponseDto;
 import com.sparta.springblog.dto.CommentRequestDto;
 import com.sparta.springblog.dto.CommentResponseDto;
@@ -17,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sparta.springblog.security.UserDetailsImpl;
-import com.sparta.springblog.service.CommentService;
+import com.sparta.springblog.service.CommentServiceImpl;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -25,22 +23,22 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CommentController {
 
-    private final CommentService commentService;
+    private final CommentServiceImpl commentServiceImpl;
 
     @PostMapping("/comments")
     public ResponseEntity<CommentResponseDto> createComment(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody CommentRequestDto requestDto) {
-        CommentResponseDto result = commentService.createComment(requestDto, userDetails.getUser());
+        CommentResponseDto result = commentServiceImpl.createComment(requestDto, userDetails.getUser());
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
     @PutMapping("/comments/{id}")
     public ResponseEntity<ApiResponseDto> updateComment(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long id, @RequestBody CommentRequestDto requestDto) {
-            CommentResponseDto result = commentService.updateComment(id, requestDto, userDetails.getUser());
+            CommentResponseDto result = commentServiceImpl.updateComment(id, requestDto, userDetails.getUser());
             return ResponseEntity.ok().body(result);
         }
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<ApiResponseDto> deleteComment(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long id) {
-            commentService.deleteComment(id, userDetails.getUser());
+            commentServiceImpl.deleteComment(id, userDetails.getUser());
             return ResponseEntity.ok().body(new ApiResponseDto("댓글 삭제 성공", HttpStatus.OK.value()));
         }
     }

@@ -1,7 +1,5 @@
 package com.sparta.springblog.controller;
 
-import java.util.concurrent.RejectedExecutionException;
-
 import com.sparta.springblog.dto.ApiResponseDto;
 import com.sparta.springblog.dto.PostListResponseDto;
 import com.sparta.springblog.dto.PostRequestDto;
@@ -19,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sparta.springblog.security.UserDetailsImpl;
-import com.sparta.springblog.service.PostService;
+import com.sparta.springblog.service.PostServiceImpl;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -27,35 +25,35 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PostController {
 
-    private final PostService postService;
+    private final PostServiceImpl postServiceImpl;
 
     @PostMapping("/posts")
     public ResponseEntity<PostResponseDto> createPost(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody PostRequestDto requestDto) {
-        PostResponseDto result = postService.createPost(requestDto, userDetails.getUser());
+        PostResponseDto result = postServiceImpl.createPost(requestDto, userDetails.getUser());
         return ResponseEntity.status(201).body(result);
     }
 
     @GetMapping("/posts")
     public ResponseEntity<PostListResponseDto> getPosts() {
-        PostListResponseDto result = postService.getPosts();
+        PostListResponseDto result = postServiceImpl.getPosts();
         return ResponseEntity.ok().body(result);
     }
 
     @GetMapping("/posts/{id}")
     public ResponseEntity<PostResponseDto> getPostById(@PathVariable Long id) {
-        PostResponseDto result = postService.getPostById(id);
+        PostResponseDto result = postServiceImpl.getPostById(id);
         return ResponseEntity.ok().body(result);
     }
 
     @PutMapping("/posts/{id}")
     public ResponseEntity<ApiResponseDto> updatePost(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long id, @RequestBody PostRequestDto requestDto) {
-            PostResponseDto result = postService.updatePost(id, requestDto, userDetails.getUser());
+            PostResponseDto result = postServiceImpl.updatePost(id, requestDto, userDetails.getUser());
             return ResponseEntity.ok().body(result);
         }
 
     @DeleteMapping("/posts/{id}")
     public ResponseEntity<ApiResponseDto> deletePost(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long id) {
-        postService.deletePost(id, userDetails.getUser());
+        postServiceImpl.deletePost(id, userDetails.getUser());
         return ResponseEntity.ok().body(new ApiResponseDto("게시글 삭제 성공", HttpStatus.OK.value()));
     }
 }
